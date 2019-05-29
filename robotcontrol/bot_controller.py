@@ -274,10 +274,17 @@ class BotController:
             rospy.loginfo("Starting a new task to get to: {}".format(target))
             current_start = start
             self.update_current_target_waypoint_and_resetting_previous(current_waypoint=target)
+            # debug
+            rospy.loginfo("[JSU:Before calling go_instruction]")
             self.go_instructions(current_start, target, wait=False, active_cb=active_cb, done_cb=done_cb)
 
+            # debug
+            rospy.loginfo("[JSU:Before calling wait_until_rainbow_is_done]")
             success = self.wait_until_rainbow_is_done()
+            rospy.loginfo("[JSU:rainbow is done]")
 
+            # debug
+            rospy.loginfo("[JSU:before calling gazebo.get_bot_state()]")
             x, y, w, v = self.gazebo.get_bot_state()
             loc_target = self.map_server.waypoint_to_coords(target)
 
@@ -294,6 +301,8 @@ class BotController:
                 start = target
                 success = True
 
+            # debug
+            rospy.loginfo("[JSU:before calling wat_waypoint_cb()]")
             if at_waypoint_cb is not None:
                 at_waypoint_cb(target)
 
@@ -314,16 +323,22 @@ class BotController:
 
     def wait_until_rainbow_is_done(self):
         """Rainbow should indicate when it thinks it is done with the task"""
+        wait_time = 0
         while True:
+            rospy.loginfo("[JSU:Waiting rainbow to finish for {} seconds]".format(wait_time))
             current_task_file = open(current_task_finished, "r")
             res = current_task_file.read().replace('\n', '')
             current_task_file.close()
+            rospy.loginfo("[JSU:the result in current_task_finished is <{}>]".format(res))
             if res == "DONE":
                 return True
             elif res == "FAILED":
                 return False
             else:
                 time.sleep(sleep_interval)
+
+            wait_time += sleep_interval
+
 
     def update_current_target_waypoint_and_resetting_previous(self, current_waypoint):
         """update a shared file to inform rainbow about current waypoint"""
